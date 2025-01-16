@@ -1,0 +1,23 @@
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            name = 'truemetrics SDK'
+            // url = "https://github.com/TRUE-Metrics-io/truemetrics_android_SDK_p_maven/raw/main"
+            url = uri("/home/e/AndroidStudioProjects/truemetrics_android_SDK_p/truemetricssdk/build/repo")
+        }
+    }
+}
+
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
