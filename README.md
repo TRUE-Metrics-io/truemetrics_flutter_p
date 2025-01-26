@@ -8,7 +8,7 @@ To use this plugin, add `truemetrics_flutter_sdk` as a dependency in your `pubsp
 
 ```yaml
 dependencies:
-  truemetrics_flutter_sdk: ^0.0.1
+  truemetrics_flutter_sdk: ^0.0.2
 ```
 
 ## Usage
@@ -17,8 +17,7 @@ Initialize the SDK
 ```
 final sdk = TruemetricsFlutterSdk();
 final config = TruemetricsConfig(config: {
-    'apiKey': 'your-api-key',
-    'debug': true
+    'apiKey': 'your-api-key'
     });
 await sdk.initialize(config);
 ```
