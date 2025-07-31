@@ -79,12 +79,16 @@ class _MyAppState extends State<MyApp> {
       'apiKey': _apiKeyController.text,
       'debug': true // Set to false for production builds
     });
-
-    try {
-      await _truemetricsPlugin.initialize(config);
-    } catch (e) {
-      print('Failed to initialize SDK: $e');
-      _showError('INITIALIZATION_ERROR', e.toString());
+    final isInit = await _truemetricsPlugin.isInitialized();
+    if(isInit == false || isInit == null) {
+      try {
+        await _truemetricsPlugin.initialize(config);
+      } catch (e) {
+        print('Failed to initialize SDK: $e');
+        _showError('INITIALIZATION_ERROR', e.toString());
+      }
+    }else{
+      _sdkState = TruemetricsState.initialized;
     }
   }
 

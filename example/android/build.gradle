@@ -4,8 +4,8 @@ allprojects {
         mavenCentral()
         maven {
             name = 'truemetrics SDK'
-            // url = "https://github.com/TRUE-Metrics-io/truemetrics_android_SDK_p_maven/raw/main"
-            url = uri("/home/e/AndroidStudioProjects/truemetrics_android_SDK_p/truemetricssdk/build/repo")
+            url = "https://github.com/TRUE-Metrics-io/truemetrics_android_SDK_p_maven/raw/main"
+            //url = uri("/home/e/AndroidStudioProjects/truemetrics_android_SDK_p/truemetricssdk/build/repo")
         }
     }
 }
