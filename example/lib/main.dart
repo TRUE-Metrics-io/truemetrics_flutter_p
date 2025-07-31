@@ -79,12 +79,18 @@ class _MyAppState extends State<MyApp> {
       'apiKey': _apiKeyController.text,
       'debug': true // Set to false for production builds
     });
-
-    try {
-      await _truemetricsPlugin.initialize(config);
-    } catch (e) {
-      print('Failed to initialize SDK: $e');
-      _showError('INITIALIZATION_ERROR', e.toString());
+    final isInit = await _truemetricsPlugin.isInitialized();
+    if (isInit == false || isInit == null) {
+      try {
+        await _truemetricsPlugin.initialize(config);
+      } catch (e) {
+        print('Failed to initialize SDK: $e');
+        _showError('INITIALIZATION_ERROR', e.toString());
+      }
+    } else {
+      setState(() {
+        _sdkState = TruemetricsState.initialized;
+      });
     }
   }
 
@@ -101,7 +107,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _logMetadata() async {
-    if (_metadataKeyController.text.isEmpty || _metadataValueController.text.isEmpty) {
+    if (_metadataKeyController.text.isEmpty ||
+        _metadataValueController.text.isEmpty) {
       _showError('METADATA_ERROR', 'Key and value cannot be empty');
       return;
     }
@@ -141,7 +148,8 @@ class _MyAppState extends State<MyApp> {
     final status = await Permission.location.request();
 
     if (status.isDenied) {
-      _showError('PERMISSION_ERROR', 'Location permission is required for the SDK to function properly');
+      _showError('PERMISSION_ERROR',
+          'Location permission is required for the SDK to function properly');
     }
 
     if (status.isPermanentlyDenied) {
@@ -154,8 +162,7 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Location Permission Required'),
           content: const Text(
               'Location permission is required for the SDK to function properly. '
-                  'Please enable it in the app settings.'
-          ),
+              'Please enable it in the app settings.'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
@@ -208,11 +215,15 @@ class _MyAppState extends State<MyApp> {
                       style: TextStyle(fontSize: 16),
                     ),
                     Text(
-                      _sdkState == TruemetricsState.recordingInProgress ? 'Recording' : 'Not Recording',
+                      _sdkState == TruemetricsState.recordingInProgress
+                          ? 'Recording'
+                          : 'Not Recording',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: _sdkState == TruemetricsState.recordingInProgress ? Colors.green : Colors.red,
+                        color: _sdkState == TruemetricsState.recordingInProgress
+                            ? Colors.green
+                            : Colors.red,
                       ),
                     ),
                   ],
@@ -227,11 +238,16 @@ class _MyAppState extends State<MyApp> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _sdkState == TruemetricsState.recordingInProgress ? Colors.red : Colors.green,
+                    backgroundColor:
+                        _sdkState == TruemetricsState.recordingInProgress
+                            ? Colors.red
+                            : Colors.green,
                     foregroundColor: Colors.white,
                   ),
                   child: Text(
-                    _sdkState == TruemetricsState.recordingInProgress ? 'Stop Recording' : 'Start Recording',
+                    _sdkState == TruemetricsState.recordingInProgress
+                        ? 'Stop Recording'
+                        : 'Start Recording',
                     style: const TextStyle(
                       color: Colors.white,
                     ),

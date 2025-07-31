@@ -1,8 +1,8 @@
 group = "io.truemetrics.truemetrics_flutter_sdk"
-version = "1.0-SNAPSHOT"
+version = "1.2.0-SNAPSHOT"
 
 buildscript {
-    ext.kotlin_version = "1.8.22"
+
     repositories {
         google()
         mavenCentral()
@@ -10,7 +10,7 @@ buildscript {
 
     dependencies {
         classpath("com.android.tools.build:gradle:8.1.0")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.0")
     }
 }
 
@@ -20,8 +20,8 @@ allprojects {
         mavenCentral()
         maven {
             name = 'truemetrics SDK'
-            // url = "https://github.com/TRUE-Metrics-io/truemetrics_android_SDK_p_maven/raw/main"
-            url = uri("/home/e/AndroidStudioProjects/truemetrics_android_SDK_p/truemetricssdk/build/repo")
+            url = "https://github.com/TRUE-Metrics-io/truemetrics_android_SDK_p_maven/raw/main"
+         //   url = uri("/home/e/AndroidStudioProjects/truemetrics_android_SDK_p/truemetricssdk/build/repo")
         }
     }
 }
@@ -35,12 +35,12 @@ android {
     compileSdk = 35
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11
+        jvmTarget = 17
     }
 
     sourceSets {
@@ -55,7 +55,7 @@ android {
     dependencies {
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")
-        implementation("io.truemetrics:truemetricssdk:1.0.25")
+        implementation("io.truemetrics:truemetricssdk:1.2.0")
     }
 
     testOptions {
