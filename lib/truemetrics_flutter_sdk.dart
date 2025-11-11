@@ -44,4 +44,8 @@ class TruemetricsFlutterSdk {
   Future<void> logMetadata(Map<String, String> params) {
     return TruemetricsFlutterSdkPlatform.instance.logMetadata(params);
   }
+
+  Future<String?> getDeviceId() {
+    return TruemetricsFlutterSdkPlatform.instance.getDeviceId();
+  }
 }

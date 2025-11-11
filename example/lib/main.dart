@@ -40,6 +40,7 @@ class _MyAppState extends State<MyApp> {
   final _metadataValueController = TextEditingController();
 
   TruemetricsState _sdkState = TruemetricsState.uninitialized;
+  String? _deviceId;
 
   @override
   void initState() {
@@ -49,11 +50,21 @@ class _MyAppState extends State<MyApp> {
 
   void _setupListeners() {
     _truemetricsPlugin.setStatusListener(
-      onStateChange: (state) {
+      onStateChange: (state) async {
         print('State changed: $state');
         setState(() {
           _sdkState = state;
         });
+
+        // Load device ID when initialized
+        if (state == TruemetricsState.initialized ||
+            state == TruemetricsState.recordingInProgress ||
+            state == TruemetricsState.recordingStopped) {
+          final deviceId = await _truemetricsPlugin.getDeviceId();
+          setState(() {
+            _deviceId = deviceId;
+          });
+        }
       },
       onError: (errorCode, message) {
         print('Error: $errorCode - $message');
@@ -61,8 +72,11 @@ class _MyAppState extends State<MyApp> {
       },
       onPermissionsRequired: (permissions) async {
         print('Need permissions: $permissions');
-        if (permissions.contains('android.permission.ACCESS_FINE_LOCATION') ||
-            permissions.contains('android.permission.ACCESS_COARSE_LOCATION')) {
+
+        // Handle all SDK permission requests
+        if (permissions.any((p) =>
+            p.contains('LOCATION') ||
+            p.contains('ACTIVITY_RECOGNITION'))) {
           await _handleLocationPermission();
         }
       },
@@ -75,10 +89,12 @@ class _MyAppState extends State<MyApp> {
       return;
     }
 
-    final config = TruemetricsConfig(config: {
-      'apiKey': _apiKeyController.text,
-      'debug': true // Set to false for production builds
-    });
+    final config = TruemetricsConfig(
+      config: {
+        'apiKey': _apiKeyController.text,
+        'delayAutoStartRecording': TruemetricsConfig.autoStartOnInit,
+      },
+    );
     final isInit = await _truemetricsPlugin.isInitialized();
     if (isInit == false || isInit == null) {
       try {
@@ -144,25 +160,43 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _handleLocationPermission() async {
-    // Request location permission
-    final status = await Permission.location.request();
+    // Request basic location permissions first
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.locationWhenInUse,
+      Permission.activityRecognition,
+    ].request();
 
-    if (status.isDenied) {
-      _showError('PERMISSION_ERROR',
-          'Location permission is required for the SDK to function properly');
+    // Request background location separately (must be done after foreground location)
+    if (statuses[Permission.locationWhenInUse]?.isGranted ?? false) {
+      final backgroundStatus = await Permission.locationAlways.request();
+      statuses[Permission.locationAlways] = backgroundStatus;
     }
 
-    if (status.isPermanentlyDenied) {
-      // Show dialog explaining that they need to enable permissions in settings
-      if (!mounted) return;
+    // Check for denied permissions
+    final deniedPermissions = statuses.entries
+        .where((entry) => entry.value.isDenied)
+        .map((entry) => entry.key)
+        .toList();
 
+    if (deniedPermissions.isNotEmpty) {
+      _showError('PERMISSION_ERROR',
+          'Some permissions were denied. SDK functionality may be limited.');
+    }
+
+    // Check for permanently denied permissions
+    final permanentlyDenied = statuses.entries
+        .where((entry) => entry.value.isPermanentlyDenied)
+        .map((entry) => entry.key)
+        .toList();
+
+    if (permanentlyDenied.isNotEmpty && mounted) {
       showDialog(
         context: context,
         builder: (BuildContext context) => AlertDialog(
-          title: const Text('Location Permission Required'),
+          title: const Text('Permissions Required'),
           content: const Text(
-              'Location permission is required for the SDK to function properly. '
-              'Please enable it in the app settings.'),
+              'Some permissions are required for the SDK to function properly. '
+              'Please enable them in the app settings.'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
@@ -207,6 +241,26 @@ class _MyAppState extends State<MyApp> {
                   child: const Text('Initialize SDK'),
                 ),
               ] else ...[
+                if (_deviceId != null) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Device ID:',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      Expanded(
+                        child: Text(
+                          _deviceId!,
+                          style: const TextStyle(fontSize: 12),
+                          textAlign: TextAlign.right,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

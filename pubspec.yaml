@@ -1,6 +1,6 @@
 name: truemetrics_flutter_sdk
 description: "Flutter plugin for Truemetrics SDK"
-version: 0.0.3
+version: 0.0.4
 homepage: https://docu.truemetrics.cloud/introduction
 repository: https://github.com/TRUE-Metrics-io/truemetrics_flutter_p
 

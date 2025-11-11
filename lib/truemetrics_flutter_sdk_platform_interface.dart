@@ -55,4 +55,8 @@ abstract class TruemetricsFlutterSdkPlatform extends PlatformInterface {
   Future<void> logMetadata(Map<String, String> params) {
     throw UnimplementedError('logMetadata() has not been implemented.');
   }
+
+  Future<String?> getDeviceId() {
+    throw UnimplementedError('getDeviceId() has not been implemented.');
+  }
 }

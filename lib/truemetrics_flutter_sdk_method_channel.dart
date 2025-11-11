@@ -120,4 +120,15 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
     _onError = null;
     _onPermissionsRequired = null;
   }
+
+  @override
+  Future<String?> getDeviceId() async {
+    try {
+      final result = await methodChannel.invokeMethod<String>('getDeviceId');
+      return result;
+    } on PlatformException catch (e) {
+      debugPrint('Failed to get device ID: ${e.message}');
+      return null;
+    }
+  }
 }
