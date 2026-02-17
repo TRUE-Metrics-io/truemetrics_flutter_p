@@ -19,7 +19,10 @@ enum TruemetricsState {
   recordingStopped,
 
   /// Traffic limit has been reached.
-  trafficLimitReached;
+  trafficLimitReached,
+
+  /// The readings database is full due to insufficient phone storage.
+  readingsDatabaseFull;
 
   String toNativeString() {
     switch (this) {
@@ -35,6 +38,8 @@ enum TruemetricsState {
         return 'RECORDING_STOPPED';
       case TruemetricsState.trafficLimitReached:
         return 'TRAFFIC_LIMIT_REACHED';
+      case TruemetricsState.readingsDatabaseFull:
+        return 'READINGS_DATABASE_FULL';
     }
   }
 
@@ -52,6 +57,8 @@ enum TruemetricsState {
         return TruemetricsState.recordingStopped;
       case 'TRAFFIC_LIMIT_REACHED':
         return TruemetricsState.trafficLimitReached;
+      case 'READINGS_DATABASE_FULL':
+        return TruemetricsState.readingsDatabaseFull;
       default:
         throw ArgumentError('Unknown state: $nativeState');
     }

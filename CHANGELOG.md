@@ -1,3 +1,17 @@
+## 0.0.5
+
+- Updated native Android SDK to 1.4.1
+- Added Statistics APIs:
+  - `getUploadStatistics()` - returns upload count and last successful upload timestamp
+  - `getSensorStatistics()` - returns per-sensor frequency and quality data
+- Added Metadata Templates APIs:
+  - Template management: `createMetadataTemplate()`, `getMetadataTemplate()`, `getMetadataTemplateNames()`, `removeMetadataTemplate()`
+  - Tagged metadata: `createMetadataFromTemplate()`, `appendToMetadataTag()`, `appendSingleToMetadataTag()`, `getMetadataByTag()`, `getMetadataTags()`, `logMetadataByTag()`, `removeMetadataTag()`, `removeFromMetadataTag()`, `clearAllMetadata()`
+- Added new state: `readingsDatabaseFull` - indicates the readings database is full due to insufficient storage
+- Status events now include `deviceId` where available (initialized, recordingInProgress, delayedStart)
+- Added new model classes: `UploadStatistics`, `SensorStatistics`, `SensorDataQuality`
+- All public types now exported from the main barrel file (`truemetrics_flutter_sdk.dart`)
+
 ## 0.0.4
 
 - Updated native Android SDK to 1.3.3

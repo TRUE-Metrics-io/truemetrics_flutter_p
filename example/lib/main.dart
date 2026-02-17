@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:truemetrics_flutter_sdk/truemetrics_flutter_sdk.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:truemetrics_flutter_sdk/truemetrics_state.dart';
 
 void main() {
   runApp(const TruemetricsApp());
@@ -38,9 +37,13 @@ class _MyAppState extends State<MyApp> {
   final _apiKeyController = TextEditingController(text: "");
   final _metadataKeyController = TextEditingController();
   final _metadataValueController = TextEditingController();
+  final _templateNameController = TextEditingController();
+  final _tagNameController = TextEditingController();
 
   TruemetricsState _sdkState = TruemetricsState.uninitialized;
   String? _deviceId;
+  UploadStatistics? _uploadStats;
+  List<SensorStatistics> _sensorStats = [];
 
   @override
   void initState() {
@@ -115,6 +118,9 @@ class _MyAppState extends State<MyApp> {
       await _truemetricsPlugin.deInitialize();
       setState(() {
         _sdkState = TruemetricsState.uninitialized;
+        _deviceId = null;
+        _uploadStats = null;
+        _sensorStats = [];
       });
     } catch (e) {
       print('Failed to deinitialize SDK: $e');
@@ -140,9 +146,95 @@ class _MyAppState extends State<MyApp> {
           backgroundColor: Colors.green,
         ),
       );
-      // Clear inputs after successful logging
       _metadataKeyController.clear();
       _metadataValueController.clear();
+    } catch (e) {
+      _showError('METADATA_ERROR', e.toString());
+    }
+  }
+
+  Future<void> _loadStatistics() async {
+    final upload = await _truemetricsPlugin.getUploadStatistics();
+    final sensor = await _truemetricsPlugin.getSensorStatistics();
+    setState(() {
+      _uploadStats = upload;
+      _sensorStats = sensor;
+    });
+  }
+
+  Future<void> _createTemplate() async {
+    if (_templateNameController.text.isEmpty ||
+        _metadataKeyController.text.isEmpty ||
+        _metadataValueController.text.isEmpty) {
+      _showError('INPUT_ERROR', 'Template name, key and value are required');
+      return;
+    }
+
+    try {
+      await _truemetricsPlugin.createMetadataTemplate(
+        _templateNameController.text,
+        {_metadataKeyController.text: _metadataValueController.text},
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Template "${_templateNameController.text}" created'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      _showError('TEMPLATE_ERROR', e.toString());
+    }
+  }
+
+  Future<void> _createFromTemplateAndLog() async {
+    if (_templateNameController.text.isEmpty || _tagNameController.text.isEmpty) {
+      _showError('INPUT_ERROR', 'Template name and tag are required');
+      return;
+    }
+
+    try {
+      final created = await _truemetricsPlugin.createMetadataFromTemplate(
+        _tagNameController.text,
+        _templateNameController.text,
+      );
+      if (!created) {
+        _showError('TEMPLATE_ERROR', 'Template not found');
+        return;
+      }
+      final logged = await _truemetricsPlugin.logMetadataByTag(_tagNameController.text);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(logged ? 'Tagged metadata logged' : 'Failed to log'),
+          backgroundColor: logged ? Colors.green : Colors.orange,
+        ),
+      );
+    } catch (e) {
+      _showError('TEMPLATE_ERROR', e.toString());
+    }
+  }
+
+  Future<void> _showTemplateNames() async {
+    final names = await _truemetricsPlugin.getMetadataTemplateNames();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Templates: ${names.isEmpty ? "(none)" : names.join(", ")}'),
+      ),
+    );
+  }
+
+  Future<void> _clearAllMetadata() async {
+    try {
+      await _truemetricsPlugin.clearAllMetadata();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('All metadata cleared'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       _showError('METADATA_ERROR', e.toString());
     }
@@ -160,19 +252,16 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _handleLocationPermission() async {
-    // Request basic location permissions first
     Map<Permission, PermissionStatus> statuses = await [
       Permission.locationWhenInUse,
       Permission.activityRecognition,
     ].request();
 
-    // Request background location separately (must be done after foreground location)
     if (statuses[Permission.locationWhenInUse]?.isGranted ?? false) {
       final backgroundStatus = await Permission.locationAlways.request();
       statuses[Permission.locationAlways] = backgroundStatus;
     }
 
-    // Check for denied permissions
     final deniedPermissions = statuses.entries
         .where((entry) => entry.value.isDenied)
         .map((entry) => entry.key)
@@ -183,7 +272,6 @@ class _MyAppState extends State<MyApp> {
           'Some permissions were denied. SDK functionality may be limited.');
     }
 
-    // Check for permanently denied permissions
     final permanentlyDenied = statuses.entries
         .where((entry) => entry.value.isPermanentlyDenied)
         .map((entry) => entry.key)
@@ -215,6 +303,32 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  String _stateDisplayName(TruemetricsState state) {
+    switch (state) {
+      case TruemetricsState.recordingInProgress:
+        return 'Recording';
+      case TruemetricsState.readingsDatabaseFull:
+        return 'DB Full';
+      case TruemetricsState.trafficLimitReached:
+        return 'Traffic Limit';
+      default:
+        return 'Not Recording';
+    }
+  }
+
+  Color _stateColor(TruemetricsState state) {
+    switch (state) {
+      case TruemetricsState.recordingInProgress:
+        return Colors.green;
+      case TruemetricsState.readingsDatabaseFull:
+        return Colors.orange;
+      case TruemetricsState.trafficLimitReached:
+        return Colors.orange;
+      default:
+        return Colors.red;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -222,7 +336,7 @@ class _MyAppState extends State<MyApp> {
         title: const Text('Truemetrics API Demo'),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -269,15 +383,11 @@ class _MyAppState extends State<MyApp> {
                       style: TextStyle(fontSize: 16),
                     ),
                     Text(
-                      _sdkState == TruemetricsState.recordingInProgress
-                          ? 'Recording'
-                          : 'Not Recording',
+                      _stateDisplayName(_sdkState),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: _sdkState == TruemetricsState.recordingInProgress
-                            ? Colors.green
-                            : Colors.red,
+                        color: _stateColor(_sdkState),
                       ),
                     ),
                   ],
@@ -307,7 +417,41 @@ class _MyAppState extends State<MyApp> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 48),
+
+                // --- Statistics Section ---
+                const SizedBox(height: 32),
+                const Text(
+                  'Statistics',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: _loadStatistics,
+                  child: const Text('Load Statistics'),
+                ),
+                if (_uploadStats != null) ...[
+                  const SizedBox(height: 8),
+                  Text('Successful uploads: ${_uploadStats!.successfulUploadsCount}'),
+                  Text('Last upload: ${_uploadStats!.lastSuccessfulUploadTimestamp != null ? DateTime.fromMillisecondsSinceEpoch(_uploadStats!.lastSuccessfulUploadTimestamp!).toString() : "N/A"}'),
+                ],
+                if (_sensorStats.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  ...(_sensorStats.map((s) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Text(
+                      '${s.sensorName}: ${s.actualFrequencyHz.toStringAsFixed(1)}/${s.configuredFrequencyHz.toStringAsFixed(1)} Hz (${s.quality.name})',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ))),
+                ],
+
+                // --- Metadata Section ---
+                const SizedBox(height: 32),
+                const Text(
+                  'Log Metadata',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
@@ -331,11 +475,63 @@ class _MyAppState extends State<MyApp> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: _logMetadata,
                   child: const Text('Log Metadata'),
                 ),
+
+                // --- Metadata Templates Section ---
+                const SizedBox(height: 32),
+                const Text(
+                  'Metadata Templates',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _templateNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Template Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _tagNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tag Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _createTemplate,
+                      child: const Text('Create Template'),
+                    ),
+                    ElevatedButton(
+                      onPressed: _createFromTemplateAndLog,
+                      child: const Text('Create & Log Tag'),
+                    ),
+                    ElevatedButton(
+                      onPressed: _showTemplateNames,
+                      child: const Text('List Templates'),
+                    ),
+                    ElevatedButton(
+                      onPressed: _clearAllMetadata,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Clear All'),
+                    ),
+                  ],
+                ),
+
+                // --- Deinitialize ---
                 const SizedBox(height: 48),
                 ElevatedButton(
                   onPressed: _deinitializeSdk,
@@ -358,6 +554,8 @@ class _MyAppState extends State<MyApp> {
     _apiKeyController.dispose();
     _metadataKeyController.dispose();
     _metadataValueController.dispose();
+    _templateNameController.dispose();
+    _tagNameController.dispose();
     _truemetricsPlugin.deInitialize();
     super.dispose();
   }

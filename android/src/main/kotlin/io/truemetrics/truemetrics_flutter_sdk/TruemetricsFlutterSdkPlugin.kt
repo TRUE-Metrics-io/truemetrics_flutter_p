@@ -90,19 +90,22 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
             is Status.Initialized -> {
                 eventSink?.success(mapOf(
                     "type" to "stateChange",
-                    "state" to "INITIALIZED"
+                    "state" to "INITIALIZED",
+                    "deviceId" to status.deviceId
                 ))
             }
             is Status.DelayedStart -> {
                 eventSink?.success(mapOf(
                     "type" to "stateChange",
-                    "state" to "DELAYED_START"
+                    "state" to "DELAYED_START",
+                    "deviceId" to status.deviceId
                 ))
             }
             is Status.RecordingInProgress -> {
                 eventSink?.success(mapOf(
                     "type" to "stateChange",
-                    "state" to "RECORDING_IN_PROGRESS"
+                    "state" to "RECORDING_IN_PROGRESS",
+                    "deviceId" to status.deviceId
                 ))
             }
             is Status.RecordingStopped -> {
@@ -128,6 +131,12 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
                 eventSink?.success(mapOf(
                     "type" to "stateChange",
                     "state" to "TRAFFIC_LIMIT_REACHED"
+                ))
+            }
+            is Status.ReadingsDatabaseFull -> {
+                eventSink?.success(mapOf(
+                    "type" to "stateChange",
+                    "state" to "READINGS_DATABASE_FULL"
                 ))
             }
         }
@@ -232,10 +241,183 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
             }
             "getDeviceId" -> {
                 try {
-                    val deviceId = TruemetricsSdk.getInstance().deviceIdFlow.value
+                    val deviceId = TruemetricsSdk.getInstance().getDeviceId()
                     result.success(deviceId ?: "")
                 } catch (e: Exception) {
                     result.error("GET_DEVICE_ID_ERROR", e.message, e.toString())
+                }
+            }
+            "getUploadStatistics" -> {
+                try {
+                    val stats = TruemetricsSdk.getInstance().getUploadStatistics()
+                    if (stats != null) {
+                        result.success(mapOf(
+                            "successfulUploadsCount" to stats.successfulUploadsCount,
+                            "lastSuccessfulUploadTimestamp" to stats.lastSuccessfulUploadTimestamp
+                        ))
+                    } else {
+                        result.success(null)
+                    }
+                } catch (e: Exception) {
+                    result.error("GET_UPLOAD_STATISTICS_ERROR", e.message, e.toString())
+                }
+            }
+            "getSensorStatistics" -> {
+                try {
+                    val stats = TruemetricsSdk.getInstance().getSensorStatistics()
+                    if (stats != null) {
+                        val serialized = stats.map { sensor ->
+                            mapOf(
+                                "sensorName" to sensor.sensorName.name,
+                                "configuredFrequencyHz" to sensor.configuredFrequencyHz.toDouble(),
+                                "actualFrequencyHz" to sensor.actualFrequencyHz.toDouble(),
+                                "quality" to sensor.quality.name
+                            )
+                        }
+                        result.success(serialized)
+                    } else {
+                        result.success(null)
+                    }
+                } catch (e: Exception) {
+                    result.error("GET_SENSOR_STATISTICS_ERROR", e.message, e.toString())
+                }
+            }
+            "createMetadataTemplate" -> {
+                try {
+                    val templateName = call.argument<String>("templateName")
+                        ?: throw IllegalArgumentException("templateName is required")
+                    @Suppress("UNCHECKED_CAST")
+                    val templateData = call.argument<Map<String, String>>("templateData")
+                        ?: throw IllegalArgumentException("templateData is required")
+                    TruemetricsSdk.getInstance().createMetadataTemplate(templateName, templateData)
+                    result.success(null)
+                } catch (e: Exception) {
+                    result.error("METADATA_TEMPLATE_ERROR", e.message, e.toString())
+                }
+            }
+            "getMetadataTemplate" -> {
+                try {
+                    val templateName = call.argument<String>("templateName")
+                        ?: throw IllegalArgumentException("templateName is required")
+                    val template = TruemetricsSdk.getInstance().getMetadataTemplate(templateName)
+                    result.success(template)
+                } catch (e: Exception) {
+                    result.error("METADATA_TEMPLATE_ERROR", e.message, e.toString())
+                }
+            }
+            "getMetadataTemplateNames" -> {
+                try {
+                    val names = TruemetricsSdk.getInstance().getMetadataTemplateNames()
+                    result.success(names.toList())
+                } catch (e: Exception) {
+                    result.error("METADATA_TEMPLATE_ERROR", e.message, e.toString())
+                }
+            }
+            "removeMetadataTemplate" -> {
+                try {
+                    val templateName = call.argument<String>("templateName")
+                        ?: throw IllegalArgumentException("templateName is required")
+                    val removed = TruemetricsSdk.getInstance().removeMetadataTemplate(templateName)
+                    result.success(removed)
+                } catch (e: Exception) {
+                    result.error("METADATA_TEMPLATE_ERROR", e.message, e.toString())
+                }
+            }
+            "createMetadataFromTemplate" -> {
+                try {
+                    val tag = call.argument<String>("tag")
+                        ?: throw IllegalArgumentException("tag is required")
+                    val templateName = call.argument<String>("templateName")
+                        ?: throw IllegalArgumentException("templateName is required")
+                    val created = TruemetricsSdk.getInstance().createMetadataFromTemplate(tag, templateName)
+                    result.success(created)
+                } catch (e: Exception) {
+                    result.error("METADATA_ERROR", e.message, e.toString())
+                }
+            }
+            "appendToMetadataTag" -> {
+                try {
+                    val tag = call.argument<String>("tag")
+                        ?: throw IllegalArgumentException("tag is required")
+                    @Suppress("UNCHECKED_CAST")
+                    val metadata = call.argument<Map<String, String>>("metadata")
+                        ?: throw IllegalArgumentException("metadata is required")
+                    TruemetricsSdk.getInstance().appendToMetadataTag(tag, metadata)
+                    result.success(null)
+                } catch (e: Exception) {
+                    result.error("METADATA_ERROR", e.message, e.toString())
+                }
+            }
+            "appendSingleToMetadataTag" -> {
+                try {
+                    val tag = call.argument<String>("tag")
+                        ?: throw IllegalArgumentException("tag is required")
+                    val key = call.argument<String>("key")
+                        ?: throw IllegalArgumentException("key is required")
+                    val value = call.argument<String>("value")
+                        ?: throw IllegalArgumentException("value is required")
+                    TruemetricsSdk.getInstance().appendToMetadataTag(tag, key, value)
+                    result.success(null)
+                } catch (e: Exception) {
+                    result.error("METADATA_ERROR", e.message, e.toString())
+                }
+            }
+            "getMetadataByTag" -> {
+                try {
+                    val tag = call.argument<String>("tag")
+                        ?: throw IllegalArgumentException("tag is required")
+                    val metadata = TruemetricsSdk.getInstance().getMetadataByTag(tag)
+                    result.success(metadata)
+                } catch (e: Exception) {
+                    result.error("METADATA_ERROR", e.message, e.toString())
+                }
+            }
+            "getMetadataTags" -> {
+                try {
+                    val tags = TruemetricsSdk.getInstance().getMetadataTags()
+                    result.success(tags.toList())
+                } catch (e: Exception) {
+                    result.error("METADATA_ERROR", e.message, e.toString())
+                }
+            }
+            "logMetadataByTag" -> {
+                try {
+                    val tag = call.argument<String>("tag")
+                        ?: throw IllegalArgumentException("tag is required")
+                    val logged = TruemetricsSdk.getInstance().logMetadataByTag(tag)
+                    result.success(logged)
+                } catch (e: Exception) {
+                    result.error("METADATA_ERROR", e.message, e.toString())
+                }
+            }
+            "removeMetadataTag" -> {
+                try {
+                    val tag = call.argument<String>("tag")
+                        ?: throw IllegalArgumentException("tag is required")
+                    val removed = TruemetricsSdk.getInstance().removeMetadataTag(tag)
+                    result.success(removed)
+                } catch (e: Exception) {
+                    result.error("METADATA_ERROR", e.message, e.toString())
+                }
+            }
+            "removeFromMetadataTag" -> {
+                try {
+                    val tag = call.argument<String>("tag")
+                        ?: throw IllegalArgumentException("tag is required")
+                    val key = call.argument<String>("key")
+                        ?: throw IllegalArgumentException("key is required")
+                    val removed = TruemetricsSdk.getInstance().removeFromMetadataTag(tag, key)
+                    result.success(removed)
+                } catch (e: Exception) {
+                    result.error("METADATA_ERROR", e.message, e.toString())
+                }
+            }
+            "clearAllMetadata" -> {
+                try {
+                    TruemetricsSdk.getInstance().clearAllMetadata()
+                    result.success(null)
+                } catch (e: Exception) {
+                    result.error("METADATA_ERROR", e.message, e.toString())
                 }
             }
             else -> result.notImplemented()

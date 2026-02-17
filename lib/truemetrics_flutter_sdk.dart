@@ -1,8 +1,14 @@
 
 import 'package:truemetrics_flutter_sdk/truemetrics_config.dart';
 import 'truemetrics_flutter_sdk_platform_interface.dart';
+import 'upload_statistics.dart';
+import 'sensor_statistics.dart';
 
 export 'truemetrics_config.dart';
+export 'truemetrics_state.dart';
+export 'truemetrics_error.dart';
+export 'upload_statistics.dart';
+export 'sensor_statistics.dart';
 
 class TruemetricsFlutterSdk {
   Future<bool?> isInitialized() {
@@ -47,5 +53,69 @@ class TruemetricsFlutterSdk {
 
   Future<String?> getDeviceId() {
     return TruemetricsFlutterSdkPlatform.instance.getDeviceId();
+  }
+
+  // --- Statistics APIs ---
+
+  Future<UploadStatistics?> getUploadStatistics() {
+    return TruemetricsFlutterSdkPlatform.instance.getUploadStatistics();
+  }
+
+  Future<List<SensorStatistics>> getSensorStatistics() {
+    return TruemetricsFlutterSdkPlatform.instance.getSensorStatistics();
+  }
+
+  // --- Metadata Template APIs ---
+
+  Future<void> createMetadataTemplate(String templateName, Map<String, String> templateData) {
+    return TruemetricsFlutterSdkPlatform.instance.createMetadataTemplate(templateName, templateData);
+  }
+
+  Future<Map<String, String>?> getMetadataTemplate(String templateName) {
+    return TruemetricsFlutterSdkPlatform.instance.getMetadataTemplate(templateName);
+  }
+
+  Future<Set<String>> getMetadataTemplateNames() {
+    return TruemetricsFlutterSdkPlatform.instance.getMetadataTemplateNames();
+  }
+
+  Future<bool> removeMetadataTemplate(String templateName) {
+    return TruemetricsFlutterSdkPlatform.instance.removeMetadataTemplate(templateName);
+  }
+
+  Future<bool> createMetadataFromTemplate(String tag, String templateName) {
+    return TruemetricsFlutterSdkPlatform.instance.createMetadataFromTemplate(tag, templateName);
+  }
+
+  Future<void> appendToMetadataTag(String tag, Map<String, String> metadata) {
+    return TruemetricsFlutterSdkPlatform.instance.appendToMetadataTag(tag, metadata);
+  }
+
+  Future<void> appendSingleToMetadataTag(String tag, String key, String value) {
+    return TruemetricsFlutterSdkPlatform.instance.appendSingleToMetadataTag(tag, key, value);
+  }
+
+  Future<Map<String, String>?> getMetadataByTag(String tag) {
+    return TruemetricsFlutterSdkPlatform.instance.getMetadataByTag(tag);
+  }
+
+  Future<Set<String>> getMetadataTags() {
+    return TruemetricsFlutterSdkPlatform.instance.getMetadataTags();
+  }
+
+  Future<bool> logMetadataByTag(String tag) {
+    return TruemetricsFlutterSdkPlatform.instance.logMetadataByTag(tag);
+  }
+
+  Future<bool> removeMetadataTag(String tag) {
+    return TruemetricsFlutterSdkPlatform.instance.removeMetadataTag(tag);
+  }
+
+  Future<bool> removeFromMetadataTag(String tag, String key) {
+    return TruemetricsFlutterSdkPlatform.instance.removeFromMetadataTag(tag, key);
+  }
+
+  Future<void> clearAllMetadata() {
+    return TruemetricsFlutterSdkPlatform.instance.clearAllMetadata();
   }
 }
