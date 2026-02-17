@@ -7,9 +7,24 @@
 - Added Metadata Templates APIs:
   - Template management: `createMetadataTemplate()`, `getMetadataTemplate()`, `getMetadataTemplateNames()`, `removeMetadataTemplate()`
   - Tagged metadata: `createMetadataFromTemplate()`, `appendToMetadataTag()`, `appendSingleToMetadataTag()`, `getMetadataByTag()`, `getMetadataTags()`, `logMetadataByTag()`, `removeMetadataTag()`, `removeFromMetadataTag()`, `clearAllMetadata()`
+- Added Recording State APIs:
+  - `isRecordingInProgress()` - check if recording is currently active
+  - `isRecordingStopped()` - check if recording has been stopped
+  - `getRecordingStartTime()` - get the timestamp when recording started
+- Added Sensor Control APIs:
+  - `setAllSensorsEnabled()` - enable or disable all sensors
+  - `getAllSensorsEnabled()` - check if all sensors are enabled
+- Added Sensor Info API:
+  - `getSensorInfo()` - returns current sensor information (name, status, frequency, missing permissions)
+- Added Configuration APIs:
+  - `getActiveConfig()` - returns the active SDK configuration from the server
+  - `onConfigChange` callback in `setStatusListener()` for live configuration updates
+- **BREAKING**: `StateChangeCallback` now receives `TruemetricsStatusEvent` instead of `TruemetricsState` enum
+  - Access state via `event.state`, device ID via `event.deviceId`, delay via `event.delayMs`
+  - `deviceId` is now directly available in `initialized`, `recordingInProgress`, and `delayedStart` events
+  - `delayMs` is now included in `delayedStart` events
 - Added new state: `readingsDatabaseFull` - indicates the readings database is full due to insufficient storage
-- Status events now include `deviceId` where available (initialized, recordingInProgress, delayedStart)
-- Added new model classes: `UploadStatistics`, `SensorStatistics`, `SensorDataQuality`
+- Added new model classes: `UploadStatistics`, `SensorStatistics`, `SensorDataQuality`, `TruemetricsConfiguration`, `UploadMode`, `TrafficStatus`, `SensorInfo`, `SensorName`, `SensorStatus`, `TruemetricsStatusEvent`
 - All public types now exported from the main barrel file (`truemetrics_flutter_sdk.dart`)
 
 ## 0.0.4

@@ -64,3 +64,25 @@ enum TruemetricsState {
     }
   }
 }
+
+/// A rich status event containing the state plus optional contextual data.
+///
+/// States that carry additional data:
+/// - [TruemetricsState.initialized]: [deviceId] is set
+/// - [TruemetricsState.recordingInProgress]: [deviceId] is set
+/// - [TruemetricsState.delayedStart]: [deviceId] and [delayMs] are set
+class TruemetricsStatusEvent {
+  final TruemetricsState state;
+  final String? deviceId;
+  final int? delayMs;
+
+  const TruemetricsStatusEvent({
+    required this.state,
+    this.deviceId,
+    this.delayMs,
+  });
+
+  @override
+  String toString() =>
+      'TruemetricsStatusEvent(state: $state, deviceId: $deviceId, delayMs: $delayMs)';
+}

@@ -53,21 +53,14 @@ class _MyAppState extends State<MyApp> {
 
   void _setupListeners() {
     _truemetricsPlugin.setStatusListener(
-      onStateChange: (state) async {
-        print('State changed: $state');
+      onStateChange: (event) {
+        print('State changed: ${event.state}, deviceId: ${event.deviceId}');
         setState(() {
-          _sdkState = state;
+          _sdkState = event.state;
+          if (event.deviceId != null) {
+            _deviceId = event.deviceId;
+          }
         });
-
-        // Load device ID when initialized
-        if (state == TruemetricsState.initialized ||
-            state == TruemetricsState.recordingInProgress ||
-            state == TruemetricsState.recordingStopped) {
-          final deviceId = await _truemetricsPlugin.getDeviceId();
-          setState(() {
-            _deviceId = deviceId;
-          });
-        }
       },
       onError: (errorCode, message) {
         print('Error: $errorCode - $message');

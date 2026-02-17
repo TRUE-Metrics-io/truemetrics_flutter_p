@@ -4,10 +4,13 @@ import 'truemetrics_flutter_sdk_method_channel.dart';
 import 'truemetrics_state.dart';
 import 'upload_statistics.dart';
 import 'sensor_statistics.dart';
+import 'configuration.dart';
+import 'sensor_info.dart';
 
-typedef StateChangeCallback = void Function(TruemetricsState state);
+typedef StateChangeCallback = void Function(TruemetricsStatusEvent event);
 typedef ErrorCallback = void Function(String errorCode, String? message);
 typedef PermissionsCallback = void Function(List<String> permissions);
+typedef ConfigChangeCallback = void Function(TruemetricsConfiguration config);
 
 abstract class TruemetricsFlutterSdkPlatform extends PlatformInterface {
   TruemetricsFlutterSdkPlatform() : super(token: _token);
@@ -30,6 +33,7 @@ abstract class TruemetricsFlutterSdkPlatform extends PlatformInterface {
     StateChangeCallback? onStateChange,
     ErrorCallback? onError,
     PermissionsCallback? onPermissionsRequired,
+    ConfigChangeCallback? onConfigChange,
   }) {
     throw UnimplementedError('setStatusListener() has not been implemented.');
   }
@@ -60,6 +64,26 @@ abstract class TruemetricsFlutterSdkPlatform extends PlatformInterface {
 
   Future<String?> getDeviceId() {
     throw UnimplementedError('getDeviceId() has not been implemented.');
+  }
+
+  Future<bool> isRecordingInProgress() {
+    throw UnimplementedError('isRecordingInProgress() has not been implemented.');
+  }
+
+  Future<bool> isRecordingStopped() {
+    throw UnimplementedError('isRecordingStopped() has not been implemented.');
+  }
+
+  Future<int> getRecordingStartTime() {
+    throw UnimplementedError('getRecordingStartTime() has not been implemented.');
+  }
+
+  Future<void> setAllSensorsEnabled(bool enabled) {
+    throw UnimplementedError('setAllSensorsEnabled() has not been implemented.');
+  }
+
+  Future<bool> getAllSensorsEnabled() {
+    throw UnimplementedError('getAllSensorsEnabled() has not been implemented.');
   }
 
   Future<UploadStatistics?> getUploadStatistics() {
@@ -120,5 +144,13 @@ abstract class TruemetricsFlutterSdkPlatform extends PlatformInterface {
 
   Future<void> clearAllMetadata() {
     throw UnimplementedError('clearAllMetadata() has not been implemented.');
+  }
+
+  Future<TruemetricsConfiguration?> getActiveConfig() {
+    throw UnimplementedError('getActiveConfig() has not been implemented.');
+  }
+
+  Future<List<SensorInfo>> getSensorInfo() {
+    throw UnimplementedError('getSensorInfo() has not been implemented.');
   }
 }

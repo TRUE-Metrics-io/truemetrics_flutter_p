@@ -7,6 +7,8 @@ import 'truemetrics_config.dart';
 import 'truemetrics_state.dart';
 import 'upload_statistics.dart';
 import 'sensor_statistics.dart';
+import 'configuration.dart';
+import 'sensor_info.dart';
 
 class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
   @visibleForTesting
@@ -19,6 +21,7 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
   StateChangeCallback? _onStateChange;
   ErrorCallback? _onError;
   PermissionsCallback? _onPermissionsRequired;
+  ConfigChangeCallback? _onConfigChange;
 
   @override
   Future<bool?> isInitialized() async {
@@ -73,12 +76,14 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
     StateChangeCallback? onStateChange,
     ErrorCallback? onError,
     PermissionsCallback? onPermissionsRequired,
+    ConfigChangeCallback? onConfigChange,
   }) {
     _eventSubscription?.cancel();
 
     _onStateChange = onStateChange;
     _onError = onError;
     _onPermissionsRequired = onPermissionsRequired;
+    _onConfigChange = onConfigChange;
 
     _eventSubscription = eventChannel.receiveBroadcastStream().listen((dynamic event) {
         if (event is! Map) return;
@@ -90,7 +95,12 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
             final nativeState = event['state'] as String;
             try {
               final state = TruemetricsState.fromNativeString(nativeState);
-              _onStateChange?.call(state);
+              final statusEvent = TruemetricsStatusEvent(
+                state: state,
+                deviceId: event['deviceId'] as String?,
+                delayMs: event['delayMs'] as int?,
+              );
+              _onStateChange?.call(statusEvent);
             } catch (e) {
               debugPrint('Error parsing state: $e');
             }
@@ -105,6 +115,16 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
           case 'permissions':
             final permissions = List<String>.from(event['permissions'] as List);
             _onPermissionsRequired?.call(permissions);
+            break;
+
+          case 'configChange':
+            try {
+              final configMap = Map<String, dynamic>.from(event['config'] as Map);
+              final config = TruemetricsConfiguration.fromMap(configMap);
+              _onConfigChange?.call(config);
+            } catch (e) {
+              debugPrint('Error parsing config change: $e');
+            }
             break;
         }
       },
@@ -121,6 +141,7 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
     _onStateChange = null;
     _onError = null;
     _onPermissionsRequired = null;
+    _onConfigChange = null;
   }
 
   @override
@@ -131,6 +152,61 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
     } on PlatformException catch (e) {
       debugPrint('Failed to get device ID: ${e.message}');
       return null;
+    }
+  }
+
+  @override
+  Future<bool> isRecordingInProgress() async {
+    try {
+      final result = await methodChannel.invokeMethod<bool>('isRecordingInProgress');
+      return result ?? false;
+    } on PlatformException catch (e) {
+      debugPrint('Failed to check recording in progress: ${e.message}');
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> isRecordingStopped() async {
+    try {
+      final result = await methodChannel.invokeMethod<bool>('isRecordingStopped');
+      return result ?? false;
+    } on PlatformException catch (e) {
+      debugPrint('Failed to check recording stopped: ${e.message}');
+      return false;
+    }
+  }
+
+  @override
+  Future<int> getRecordingStartTime() async {
+    try {
+      final result = await methodChannel.invokeMethod<int>('getRecordingStartTime');
+      return result ?? 0;
+    } on PlatformException catch (e) {
+      debugPrint('Failed to get recording start time: ${e.message}');
+      return 0;
+    }
+  }
+
+  @override
+  Future<void> setAllSensorsEnabled(bool enabled) async {
+    try {
+      await methodChannel.invokeMethod<void>('setAllSensorsEnabled', {
+        'enabled': enabled,
+      });
+    } on PlatformException catch (e) {
+      throw Exception('Failed to set all sensors enabled: ${e.message}');
+    }
+  }
+
+  @override
+  Future<bool> getAllSensorsEnabled() async {
+    try {
+      final result = await methodChannel.invokeMethod<bool>('getAllSensorsEnabled');
+      return result ?? false;
+    } on PlatformException catch (e) {
+      debugPrint('Failed to get all sensors enabled: ${e.message}');
+      return false;
     }
   }
 
@@ -323,6 +399,32 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
       await methodChannel.invokeMethod<void>('clearAllMetadata');
     } on PlatformException catch (e) {
       throw Exception('Failed to clear all metadata: ${e.message}');
+    }
+  }
+
+  @override
+  Future<TruemetricsConfiguration?> getActiveConfig() async {
+    try {
+      final result = await methodChannel.invokeMapMethod<String, dynamic>('getActiveConfig');
+      if (result == null) return null;
+      return TruemetricsConfiguration.fromMap(result);
+    } on PlatformException catch (e) {
+      debugPrint('Failed to get active config: ${e.message}');
+      return null;
+    }
+  }
+
+  @override
+  Future<List<SensorInfo>> getSensorInfo() async {
+    try {
+      final result = await methodChannel.invokeListMethod<Map>('getSensorInfo');
+      if (result == null) return [];
+      return result
+          .map((item) => SensorInfo.fromMap(Map<String, dynamic>.from(item)))
+          .toList();
+    } on PlatformException catch (e) {
+      debugPrint('Failed to get sensor info: ${e.message}');
+      return [];
     }
   }
 }

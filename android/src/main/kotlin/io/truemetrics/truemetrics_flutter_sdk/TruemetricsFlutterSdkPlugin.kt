@@ -11,6 +11,7 @@ import io.truemetrics.truemetricssdk.TruemetricsSdk
 import io.truemetrics.truemetricssdk.config.SdkConfiguration
 import io.truemetrics.truemetricssdk.engine.state.Status
 import io.truemetrics.truemetricssdk.engine.ErrorCode
+import io.truemetrics.truemetricssdk.engine.configuration.domain.model.Configuration
 import io.flutter.plugin.common.MethodChannel.Result
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +36,7 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
     private var eventSink: EventChannel.EventSink? = null
     private var context: Context? = null
     private var statusObserverJob: Job? = null
+    private var configObserverJob: Job? = null
     private val supervisorJob = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.Main + supervisorJob)
 
@@ -77,6 +79,21 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
                 Log.e(TAG, "Error observing SDK status", e)
             }
         }
+
+        configObserverJob?.cancel()
+        configObserverJob = scope.launch {
+            try {
+                TruemetricsSdk.getInstance().getActiveConfigFlow()?.collectLatest { config ->
+                    Log.d(TAG, "Config changed")
+                    eventSink?.success(mapOf(
+                        "type" to "configChange",
+                        "config" to serializeConfig(config)
+                    ))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error observing config flow", e)
+            }
+        }
     }
 
     private fun handleStatusChange(status: Status) {
@@ -98,7 +115,8 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
                 eventSink?.success(mapOf(
                     "type" to "stateChange",
                     "state" to "DELAYED_START",
-                    "deviceId" to status.deviceId
+                    "deviceId" to status.deviceId,
+                    "delayMs" to status.delayMs
                 ))
             }
             is Status.RecordingInProgress -> {
@@ -146,6 +164,8 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
         Log.d(TAG, "cleanupSdkListener")
         statusObserverJob?.cancel()
         statusObserverJob = null
+        configObserverJob?.cancel()
+        configObserverJob = null
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
@@ -245,6 +265,48 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
                     result.success(deviceId ?: "")
                 } catch (e: Exception) {
                     result.error("GET_DEVICE_ID_ERROR", e.message, e.toString())
+                }
+            }
+            "isRecordingInProgress" -> {
+                try {
+                    val recording = TruemetricsSdk.getInstance().isRecordingInProgress()
+                    result.success(recording)
+                } catch (e: Exception) {
+                    result.error("IS_RECORDING_IN_PROGRESS_ERROR", e.message, e.toString())
+                }
+            }
+            "isRecordingStopped" -> {
+                try {
+                    val stopped = TruemetricsSdk.getInstance().isRecordingStopped()
+                    result.success(stopped)
+                } catch (e: Exception) {
+                    result.error("IS_RECORDING_STOPPED_ERROR", e.message, e.toString())
+                }
+            }
+            "getRecordingStartTime" -> {
+                try {
+                    val startTime = TruemetricsSdk.getInstance().getRecordingStartTime()
+                    result.success(startTime)
+                } catch (e: Exception) {
+                    result.error("GET_RECORDING_START_TIME_ERROR", e.message, e.toString())
+                }
+            }
+            "setAllSensorsEnabled" -> {
+                try {
+                    val enabled = call.argument<Boolean>("enabled")
+                        ?: throw IllegalArgumentException("enabled is required")
+                    TruemetricsSdk.getInstance().setAllSensorsEnabled(enabled)
+                    result.success(null)
+                } catch (e: Exception) {
+                    result.error("SET_ALL_SENSORS_ENABLED_ERROR", e.message, e.toString())
+                }
+            }
+            "getAllSensorsEnabled" -> {
+                try {
+                    val enabled = TruemetricsSdk.getInstance().getAllSensorsEnabled()
+                    result.success(enabled)
+                } catch (e: Exception) {
+                    result.error("GET_ALL_SENSORS_ENABLED_ERROR", e.message, e.toString())
                 }
             }
             "getUploadStatistics" -> {
@@ -420,8 +482,62 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
                     result.error("METADATA_ERROR", e.message, e.toString())
                 }
             }
+            "getActiveConfig" -> {
+                try {
+                    val config = TruemetricsSdk.getInstance().getActiveConfig()
+                    if (config != null) {
+                        result.success(serializeConfig(config))
+                    } else {
+                        result.success(null)
+                    }
+                } catch (e: Exception) {
+                    result.error("GET_ACTIVE_CONFIG_ERROR", e.message, e.toString())
+                }
+            }
+            "getSensorInfo" -> {
+                try {
+                    val sensorInfoList = TruemetricsSdk.getInstance().sensorInfo.value
+                    val serialized = sensorInfoList.map { info ->
+                        mapOf(
+                            "sensorName" to info.sensorName.name,
+                            "sensorStatus" to info.sensorStatus.name,
+                            "frequency" to info.frequency.toDouble(),
+                            "missingPermissions" to info.missingPermissions.toList()
+                        )
+                    }
+                    result.success(serialized)
+                } catch (e: Exception) {
+                    result.error("GET_SENSOR_INFO_ERROR", e.message, e.toString())
+                }
+            }
             else -> result.notImplemented()
         }
+    }
+
+    private fun serializeConfig(config: Configuration): Map<String, Any?> {
+        return mapOf(
+            "uploadMode" to config.uploadMode.name,
+            "fusedLocationPollFreq" to config.fusedLocationPollFreq.toDouble(),
+            "accelerometerPollFreq" to config.accelerometerPollFreq.toDouble(),
+            "gyroscopePollFreq" to config.gyroscopePollFreq.toDouble(),
+            "magnetometerPollFreq" to config.magnetometerPollFreq.toDouble(),
+            "barometerPollFreq" to config.barometerPollFreq.toDouble(),
+            "gnssPollFreq" to config.gnssPollFreq.toDouble(),
+            "rawLocationPollFreq" to config.rawLocationPollFreq.toDouble(),
+            "wifiPollFreq" to config.wifiPollFreq.toDouble(),
+            "batteryPollFreq" to config.batteryPollFreq.toDouble(),
+            "stepCounterPollFreq" to config.stepCounterPollFreq.toDouble(),
+            "motionModePollFreq" to config.motionModePollFreq.toDouble(),
+            "mobileDataSignalPollFreq" to config.mobileDataSignalPollFreq.toDouble(),
+            "fopPollFreq" to config.fopPollFreq.toDouble(),
+            "endpoint" to config.endpoint,
+            "trafficLimitReached" to config.trafficLimitReached.name,
+            "updateConfigPeriodSec" to config.updateConfigPeriodSec,
+            "bufferLengthMinutes" to config.bufferLengthMinutes,
+            "uploadPeriodSeconds" to config.uploadPeriodSeconds,
+            "useWorkManager" to config.useWorkManager,
+            "payloadLimitKb" to config.payloadLimitKb
+        )
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
