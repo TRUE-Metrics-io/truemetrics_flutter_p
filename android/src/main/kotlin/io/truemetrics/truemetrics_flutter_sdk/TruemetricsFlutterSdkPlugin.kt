@@ -313,10 +313,11 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
                 try {
                     val stats = TruemetricsSdk.getInstance().getUploadStatistics()
                     if (stats != null) {
-                        result.success(mapOf(
+                        val map = hashMapOf<String, Any?>(
                             "successfulUploadsCount" to stats.successfulUploadsCount,
                             "lastSuccessfulUploadTimestamp" to stats.lastSuccessfulUploadTimestamp
-                        ))
+                        )
+                        result.success(map)
                     } else {
                         result.success(null)
                     }
@@ -329,7 +330,7 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
                     val stats = TruemetricsSdk.getInstance().getSensorStatistics()
                     if (stats != null) {
                         val serialized = stats.map { sensor ->
-                            mapOf(
+                            hashMapOf<String, Any>(
                                 "sensorName" to sensor.sensorName.name,
                                 "configuredFrequencyHz" to sensor.configuredFrequencyHz.toDouble(),
                                 "actualFrequencyHz" to sensor.actualFrequencyHz.toDouble(),
