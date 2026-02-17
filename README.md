@@ -8,7 +8,7 @@ To use this plugin, add `truemetrics_flutter_sdk` as a dependency in your `pubsp
 
 ```yaml
 dependencies:
-  truemetrics_flutter_sdk: ^0.0.4
+  truemetrics_flutter_sdk: ^0.0.5
 ```
 
 ## Usage
