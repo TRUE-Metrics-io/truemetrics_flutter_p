@@ -1,6 +1,6 @@
 ## 0.0.5
 
-- Updated native Android SDK to 1.4.1
+- Updated native Android SDK to 1.4.2
 - Added Statistics APIs:
   - `getUploadStatistics()` - returns upload count and last successful upload timestamp
   - `getSensorStatistics()` - returns per-sensor frequency and quality data
