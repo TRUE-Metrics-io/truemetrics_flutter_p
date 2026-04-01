@@ -1,3 +1,11 @@
+## 0.0.7
+
+- Updated native Android SDK to 1.5.0
+- Added new state: `initializing` — emitted during config fetch on startup, SDK retries automatically on recoverable errors
+- Device ID rotation is now handled automatically based on server-configured TTL
+- **BREAKING**: Removed `getActiveConfig()`, `onConfigChange` callback, and `TruemetricsConfiguration`/`UploadMode`/`TrafficStatus` classes (internal server config not relevant to SDK consumers)
+- Multiple bug fixes in the native SDK (see Android SDK 1.5.0 changelog)
+
 ## 0.0.6
 
 - Updated native Android SDK to 1.4.6

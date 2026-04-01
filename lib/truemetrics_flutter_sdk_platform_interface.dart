@@ -4,13 +4,11 @@ import 'truemetrics_flutter_sdk_method_channel.dart';
 import 'truemetrics_state.dart';
 import 'upload_statistics.dart';
 import 'sensor_statistics.dart';
-import 'configuration.dart';
 import 'sensor_info.dart';
 
 typedef StateChangeCallback = void Function(TruemetricsStatusEvent event);
 typedef ErrorCallback = void Function(String errorCode, String? message);
 typedef PermissionsCallback = void Function(List<String> permissions);
-typedef ConfigChangeCallback = void Function(TruemetricsConfiguration config);
 
 abstract class TruemetricsFlutterSdkPlatform extends PlatformInterface {
   TruemetricsFlutterSdkPlatform() : super(token: _token);
@@ -33,7 +31,6 @@ abstract class TruemetricsFlutterSdkPlatform extends PlatformInterface {
     StateChangeCallback? onStateChange,
     ErrorCallback? onError,
     PermissionsCallback? onPermissionsRequired,
-    ConfigChangeCallback? onConfigChange,
   }) {
     throw UnimplementedError('setStatusListener() has not been implemented.');
   }
@@ -144,10 +141,6 @@ abstract class TruemetricsFlutterSdkPlatform extends PlatformInterface {
 
   Future<void> clearAllMetadata() {
     throw UnimplementedError('clearAllMetadata() has not been implemented.');
-  }
-
-  Future<TruemetricsConfiguration?> getActiveConfig() {
-    throw UnimplementedError('getActiveConfig() has not been implemented.');
   }
 
   Future<List<SensorInfo>> getSensorInfo() {

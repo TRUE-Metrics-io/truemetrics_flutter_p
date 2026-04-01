@@ -1,7 +1,12 @@
 enum TruemetricsState {
   /// SDK is not initialized.
-  /// From here, SDK can transition to INITIALIZED state.
+  /// From here, SDK can transition to INITIALIZING or INITIALIZED state.
   uninitialized,
+
+  /// SDK is initializing — fetching configuration from the server.
+  /// Retries automatically on recoverable errors (network failures, server 5xx).
+  /// Transitions to INITIALIZED when config is available, or ERROR for non-recoverable errors.
+  initializing,
 
   /// SDK is initialized and ready to record sensor data.
   /// From here, SDK can transition to RECORDING_IN_PROGRESS or UNINITIALIZED states.
@@ -28,6 +33,8 @@ enum TruemetricsState {
     switch (this) {
       case TruemetricsState.uninitialized:
         return 'UNINITIALIZED';
+      case TruemetricsState.initializing:
+        return 'INITIALIZING';
       case TruemetricsState.initialized:
         return 'INITIALIZED';
       case TruemetricsState.delayedStart:
@@ -47,6 +54,8 @@ enum TruemetricsState {
     switch (nativeState) {
       case 'UNINITIALIZED':
         return TruemetricsState.uninitialized;
+      case 'INITIALIZING':
+        return TruemetricsState.initializing;
       case 'INITIALIZED':
         return TruemetricsState.initialized;
       case 'DELAYED_START':

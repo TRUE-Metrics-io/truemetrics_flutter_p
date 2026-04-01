@@ -3,7 +3,6 @@ import 'package:truemetrics_flutter_sdk/truemetrics_config.dart';
 import 'truemetrics_flutter_sdk_platform_interface.dart';
 import 'upload_statistics.dart';
 import 'sensor_statistics.dart';
-import 'configuration.dart';
 import 'sensor_info.dart';
 
 export 'truemetrics_config.dart';
@@ -11,7 +10,6 @@ export 'truemetrics_state.dart';
 export 'truemetrics_error.dart';
 export 'upload_statistics.dart';
 export 'sensor_statistics.dart';
-export 'configuration.dart';
 export 'sensor_info.dart';
 
 class TruemetricsFlutterSdk {
@@ -23,13 +21,11 @@ class TruemetricsFlutterSdk {
     StateChangeCallback? onStateChange,
     ErrorCallback? onError,
     PermissionsCallback? onPermissionsRequired,
-    ConfigChangeCallback? onConfigChange,
   }) {
     TruemetricsFlutterSdkPlatform.instance.setStatusListener(
       onStateChange: onStateChange,
       onError: onError,
       onPermissionsRequired: onPermissionsRequired,
-      onConfigChange: onConfigChange,
     );
   }
 
@@ -97,12 +93,6 @@ class TruemetricsFlutterSdk {
 
   Future<List<SensorStatistics>> getSensorStatistics() {
     return TruemetricsFlutterSdkPlatform.instance.getSensorStatistics();
-  }
-
-  // --- Configuration APIs ---
-
-  Future<TruemetricsConfiguration?> getActiveConfig() {
-    return TruemetricsFlutterSdkPlatform.instance.getActiveConfig();
   }
 
   // --- Metadata Template APIs ---

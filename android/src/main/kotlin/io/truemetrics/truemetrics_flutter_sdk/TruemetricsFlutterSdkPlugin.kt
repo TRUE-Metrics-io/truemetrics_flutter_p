@@ -11,7 +11,6 @@ import io.truemetrics.truemetricssdk.TruemetricsSdk
 import io.truemetrics.truemetricssdk.config.SdkConfiguration
 import io.truemetrics.truemetricssdk.engine.state.Status
 import io.truemetrics.truemetricssdk.engine.ErrorCode
-import io.truemetrics.truemetricssdk.engine.configuration.domain.model.Configuration
 import io.flutter.plugin.common.MethodChannel.Result
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +35,6 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
     private var eventSink: EventChannel.EventSink? = null
     private var context: Context? = null
     private var statusObserverJob: Job? = null
-    private var configObserverJob: Job? = null
     private val supervisorJob = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.Main + supervisorJob)
 
@@ -80,20 +78,6 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
             }
         }
 
-        configObserverJob?.cancel()
-        configObserverJob = scope.launch {
-            try {
-                TruemetricsSdk.getInstance().getActiveConfigFlow()?.collectLatest { config ->
-                    Log.d(TAG, "Config changed")
-                    eventSink?.success(mapOf(
-                        "type" to "configChange",
-                        "config" to serializeConfig(config)
-                    ))
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error observing config flow", e)
-            }
-        }
     }
 
     private fun handleStatusChange(status: Status) {
@@ -102,6 +86,12 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
                 eventSink?.success(mapOf(
                     "type" to "stateChange",
                     "state" to "UNINITIALIZED"
+                ))
+            }
+            is Status.Initializing -> {
+                eventSink?.success(mapOf(
+                    "type" to "stateChange",
+                    "state" to "INITIALIZING"
                 ))
             }
             is Status.Initialized -> {
@@ -164,8 +154,6 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
         Log.d(TAG, "cleanupSdkListener")
         statusObserverJob?.cancel()
         statusObserverJob = null
-        configObserverJob?.cancel()
-        configObserverJob = null
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
@@ -483,18 +471,6 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
                     result.error("METADATA_ERROR", e.message, e.toString())
                 }
             }
-            "getActiveConfig" -> {
-                try {
-                    val config = TruemetricsSdk.getInstance().getActiveConfig()
-                    if (config != null) {
-                        result.success(serializeConfig(config))
-                    } else {
-                        result.success(null)
-                    }
-                } catch (e: Exception) {
-                    result.error("GET_ACTIVE_CONFIG_ERROR", e.message, e.toString())
-                }
-            }
             "getSensorInfo" -> {
                 try {
                     val sensorInfoList = TruemetricsSdk.getInstance().sensorInfo.value
@@ -513,32 +489,6 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
             }
             else -> result.notImplemented()
         }
-    }
-
-    private fun serializeConfig(config: Configuration): Map<String, Any?> {
-        return mapOf(
-            "uploadMode" to config.uploadMode.name,
-            "fusedLocationPollFreq" to config.fusedLocationPollFreq.toDouble(),
-            "accelerometerPollFreq" to config.accelerometerPollFreq.toDouble(),
-            "gyroscopePollFreq" to config.gyroscopePollFreq.toDouble(),
-            "magnetometerPollFreq" to config.magnetometerPollFreq.toDouble(),
-            "barometerPollFreq" to config.barometerPollFreq.toDouble(),
-            "gnssPollFreq" to config.gnssPollFreq.toDouble(),
-            "rawLocationPollFreq" to config.rawLocationPollFreq.toDouble(),
-            "wifiPollFreq" to config.wifiPollFreq.toDouble(),
-            "batteryPollFreq" to config.batteryPollFreq.toDouble(),
-            "stepCounterPollFreq" to config.stepCounterPollFreq.toDouble(),
-            "motionModePollFreq" to config.motionModePollFreq.toDouble(),
-            "mobileDataSignalPollFreq" to config.mobileDataSignalPollFreq.toDouble(),
-            "fopPollFreq" to config.fopPollFreq.toDouble(),
-            "endpoint" to config.endpoint,
-            "trafficLimitReached" to config.trafficLimitReached.name,
-            "updateConfigPeriodSec" to config.updateConfigPeriodSec,
-            "bufferLengthMinutes" to config.bufferLengthMinutes,
-            "uploadPeriodSeconds" to config.uploadPeriodSeconds,
-            "useWorkManager" to config.useWorkManager,
-            "payloadLimitKb" to config.payloadLimitKb
-        )
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {

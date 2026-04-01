@@ -7,7 +7,6 @@ import 'truemetrics_config.dart';
 import 'truemetrics_state.dart';
 import 'upload_statistics.dart';
 import 'sensor_statistics.dart';
-import 'configuration.dart';
 import 'sensor_info.dart';
 
 class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
@@ -21,7 +20,6 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
   StateChangeCallback? _onStateChange;
   ErrorCallback? _onError;
   PermissionsCallback? _onPermissionsRequired;
-  ConfigChangeCallback? _onConfigChange;
 
   @override
   Future<bool?> isInitialized() async {
@@ -76,14 +74,12 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
     StateChangeCallback? onStateChange,
     ErrorCallback? onError,
     PermissionsCallback? onPermissionsRequired,
-    ConfigChangeCallback? onConfigChange,
   }) {
     _eventSubscription?.cancel();
 
     _onStateChange = onStateChange;
     _onError = onError;
     _onPermissionsRequired = onPermissionsRequired;
-    _onConfigChange = onConfigChange;
 
     _eventSubscription = eventChannel.receiveBroadcastStream().listen((dynamic event) {
         if (event is! Map) return;
@@ -117,15 +113,6 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
             _onPermissionsRequired?.call(permissions);
             break;
 
-          case 'configChange':
-            try {
-              final configMap = Map<String, dynamic>.from(event['config'] as Map);
-              final config = TruemetricsConfiguration.fromMap(configMap);
-              _onConfigChange?.call(config);
-            } catch (e) {
-              debugPrint('Error parsing config change: $e');
-            }
-            break;
         }
       },
       onError: (dynamic error) {
@@ -141,7 +128,6 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
     _onStateChange = null;
     _onError = null;
     _onPermissionsRequired = null;
-    _onConfigChange = null;
   }
 
   @override
@@ -399,18 +385,6 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
       await methodChannel.invokeMethod<void>('clearAllMetadata');
     } on PlatformException catch (e) {
       throw Exception('Failed to clear all metadata: ${e.message}');
-    }
-  }
-
-  @override
-  Future<TruemetricsConfiguration?> getActiveConfig() async {
-    try {
-      final result = await methodChannel.invokeMapMethod<String, dynamic>('getActiveConfig');
-      if (result == null) return null;
-      return TruemetricsConfiguration.fromMap(result);
-    } on PlatformException catch (e) {
-      debugPrint('Failed to get active config: ${e.message}');
-      return null;
     }
   }
 
