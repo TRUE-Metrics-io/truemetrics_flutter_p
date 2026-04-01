@@ -1,3 +1,13 @@
+## 0.0.6
+
+- Updated native Android SDK to 1.4.6
+- Fixed crash on startup when service binding takes longer than expected
+- Fixed `startRecording()` not working in several edge cases (called immediately after `init()`, after service reconnect, during engine initialization)
+- Fixed `getDeviceId()` returning null after `stopRecording()`
+- Fixed error status being silently cleared on `deinitialize()`
+- Fixed crash when backend sends invalid payload size limit
+- Fixed Sentry version conflict with host apps using Sentry 9.x or other incompatible versions
+
 ## 0.0.5
 
 - Updated native Android SDK to 1.4.2
