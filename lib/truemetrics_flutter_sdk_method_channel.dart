@@ -8,6 +8,7 @@ import 'truemetrics_state.dart';
 import 'upload_statistics.dart';
 import 'sensor_statistics.dart';
 import 'sensor_info.dart';
+import 'standard_metadata.dart';
 
 class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
   @visibleForTesting
@@ -55,6 +56,18 @@ class MethodChannelTruemetricsFlutterSdk extends TruemetricsFlutterSdkPlatform {
   @override
   Future<void> deInitialize() async {
     return await methodChannel.invokeMethod<void>('deinitialize');
+  }
+
+  @override
+  Future<void> logStandardMetadata(StandardMetadata metadata) async {
+    try {
+      return await methodChannel.invokeMethod<void>(
+        'logStandardMetadata',
+        metadata.toMap(),
+      );
+    } on PlatformException catch (e) {
+      throw Exception('Failed to log standard metadata: ${e.message}');
+    }
   }
 
   @override

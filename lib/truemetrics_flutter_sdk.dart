@@ -4,6 +4,7 @@ import 'truemetrics_flutter_sdk_platform_interface.dart';
 import 'upload_statistics.dart';
 import 'sensor_statistics.dart';
 import 'sensor_info.dart';
+import 'standard_metadata.dart';
 
 export 'truemetrics_config.dart';
 export 'truemetrics_state.dart';
@@ -11,6 +12,7 @@ export 'truemetrics_error.dart';
 export 'upload_statistics.dart';
 export 'sensor_statistics.dart';
 export 'sensor_info.dart';
+export 'standard_metadata.dart';
 
 class TruemetricsFlutterSdk {
   Future<bool?> isInitialized() {
@@ -49,6 +51,11 @@ class TruemetricsFlutterSdk {
     return TruemetricsFlutterSdkPlatform.instance.deInitialize();
   }
 
+  Future<void> logStandardMetadata(StandardMetadata metadata) {
+    return TruemetricsFlutterSdkPlatform.instance.logStandardMetadata(metadata);
+  }
+
+  @Deprecated('Use logStandardMetadata(StandardMetadata) instead')
   Future<void> logMetadata(Map<String, String> params) {
     return TruemetricsFlutterSdkPlatform.instance.logMetadata(params);
   }

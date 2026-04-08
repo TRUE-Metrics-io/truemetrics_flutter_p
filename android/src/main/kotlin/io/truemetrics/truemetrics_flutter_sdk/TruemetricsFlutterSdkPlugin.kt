@@ -9,6 +9,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.truemetrics.truemetricssdk.TruemetricsSdk
 import io.truemetrics.truemetricssdk.config.SdkConfiguration
+import io.truemetrics.truemetricssdk.metadata.StandardMetadata
 import io.truemetrics.truemetricssdk.engine.state.Status
 import io.truemetrics.truemetricssdk.engine.ErrorCode
 import io.flutter.plugin.common.MethodChannel.Result
@@ -237,12 +238,42 @@ class TruemetricsFlutterSdkPlugin: FlutterPlugin, MethodCallHandler {
                     val params = call.arguments as? Map<String, String>
                         ?: throw IllegalArgumentException("Metadata parameters must be Map<String, String>")
 
+                    @Suppress("DEPRECATION")
                     TruemetricsSdk.getInstance().logMetadata(params)
                     result.success(null)
                 } catch (e: Exception) {
                     result.error(
                         "METADATA_ERROR",
                         e.message ?: "Failed to log metadata",
+                        e.toString()
+                    )
+                }
+            }
+            "logStandardMetadata" -> {
+                try {
+                    @Suppress("UNCHECKED_CAST")
+                    val args = call.arguments as? Map<String, Any>
+                        ?: throw IllegalArgumentException("Arguments must be a Map")
+
+                    @Suppress("UNCHECKED_CAST")
+                    val metadata = StandardMetadata(
+                        eventTime = args["eventTime"] as? String ?: "",
+                        eventType = args["eventType"] as? String ?: "",
+                        deliveryId = args["deliveryId"] as? String ?: "",
+                        tourId = args["tourId"] as? String ?: "",
+                        waypointLatitude = args["waypointLatitude"] as? String ?: "",
+                        waypointLongitude = args["waypointLongitude"] as? String ?: "",
+                        referenceLatitude = args["referenceLatitude"] as? String ?: "",
+                        referenceLongitude = args["referenceLongitude"] as? String ?: "",
+                        address = args["address"] as? String ?: "",
+                        extra = (args["extra"] as? Map<String, String>) ?: emptyMap()
+                    )
+                    TruemetricsSdk.getInstance().logMetadata(metadata)
+                    result.success(null)
+                } catch (e: Exception) {
+                    result.error(
+                        "METADATA_ERROR",
+                        e.message ?: "Failed to log standard metadata",
                         e.toString()
                     )
                 }

@@ -5,6 +5,7 @@ import 'truemetrics_state.dart';
 import 'upload_statistics.dart';
 import 'sensor_statistics.dart';
 import 'sensor_info.dart';
+import 'standard_metadata.dart';
 
 typedef StateChangeCallback = void Function(TruemetricsStatusEvent event);
 typedef ErrorCallback = void Function(String errorCode, String? message);
@@ -53,6 +54,10 @@ abstract class TruemetricsFlutterSdkPlatform extends PlatformInterface {
 
   Future<void> deInitialize() {
     throw UnimplementedError('deInitialize() has not been implemented.');
+  }
+
+  Future<void> logStandardMetadata(StandardMetadata metadata) {
+    throw UnimplementedError('logStandardMetadata() has not been implemented.');
   }
 
   Future<void> logMetadata(Map<String, String> params) {
