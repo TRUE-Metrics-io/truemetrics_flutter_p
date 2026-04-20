@@ -1,6 +1,18 @@
+## 0.0.10
+
+- Updated native Android SDK to 1.5.3
+- Improved crash report accuracy — stack traces now include correct line numbers and method attribution
+
 ## 0.0.9
 
 - Updated native Android SDK to 1.5.2
+- Fixed spurious error logs when optional stats module is not bundled
+- Fixed crash when metadata contains null values (e.g. from Java/Xamarin callers)
+- Removed debug recording notification that could appear on some builds
+
+## 0.0.8
+
+- Updated native Android SDK to 1.5.1
 - Added `logStandardMetadata(StandardMetadata)` for logging standardized delivery/pickup event metadata with structured fields
 - **Deprecated**: `logMetadata(Map)` is deprecated in favor of `logStandardMetadata(StandardMetadata)`
 - Fixed device ID rotation attaching a new device ID to sensor data collected before the rotation
