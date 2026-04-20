@@ -1,6 +1,6 @@
-## 0.0.8
+## 0.0.9
 
-- Updated native Android SDK to 1.5.1
+- Updated native Android SDK to 1.5.2
 - Added `logStandardMetadata(StandardMetadata)` for logging standardized delivery/pickup event metadata with structured fields
 - **Deprecated**: `logMetadata(Map)` is deprecated in favor of `logStandardMetadata(StandardMetadata)`
 - Fixed device ID rotation attaching a new device ID to sensor data collected before the rotation
