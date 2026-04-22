@@ -1,3 +1,10 @@
+## 0.0.11
+
+- Updated native Android SDK to 1.5.4
+- Fixed metadata values being corrupted: characters like `:`, `/`, `\`, `*`, `?`, and `;` are now preserved as sent
+- Fixed crash when `StandardMetadata.extra` is `null`
+- Fixed a rare crash when the background upload worker was restarted by the system before the host app re-initialized the SDK
+
 ## 0.0.10
 
 - Updated native Android SDK to 1.5.3
