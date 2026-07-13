@@ -31,3 +31,7 @@ migrate_working_dir/
 .flutter-plugins
 .flutter-plugins-dependencies
 build/
+
+# graphify local artifacts
+graphify-out/
+.graphifyignore

@@ -1,3 +1,18 @@
+## 0.0.12
+
+- Updated native Android SDK to 1.5.8
+- Offline resilience: in metadata-triggered mode, unsent data is now kept for up to 3 days, so a metadata event arriving late (e.g. after the device was offline) can still upload the data it covers
+- If device storage fills up, the SDK now drops the oldest unsent readings to keep recording — preserving the newest data — and recovers automatically once space frees up
+- Fixed background uploads that could stop permanently on some devices (aggressive battery/background management) after the system interrupted an upload; uploads now resume automatically
+- Fixed data uploads silently stopping for the rest of a session when the SDK was re-initialized right after a shutdown (e.g. after an auth error with a corrected API key)
+- Fixed sensor recording that could silently stop while metadata kept being sent — a sensor that can't be initialized (e.g. fused orientation) is now skipped instead of bringing the whole recording down
+- Fixed a startup crash when the SDK was initialized without location permission; the background recording service now starts reliably on Android 14+ and uses location once granted
+- The SDK now initializes on devices without WiFi hardware (the WiFi sensor is skipped)
+- On Android 15, background recording ended by the system is now reported as stopped through the status listener instead of appearing active
+- Reduced mobile data usage and battery drain when the server is unreachable; uploads now back off between retries instead of resending continuously
+- `payload_limit_kb` now supports values up to 9,000 KB; each upload flushes when the buffer reaches 80% of the limit or the oldest reading exceeds `period_upload`, whichever comes first
+- **Action required (Google Play):** the SDK's foreground services no longer use the "special use" foreground-service type. If your Play Console foreground-service declaration listed "special use" for a Truemetrics service, update it to "data sync".
+
 ## 0.0.11
 
 - Updated native Android SDK to 1.5.4
