@@ -1,3 +1,16 @@
+## 0.0.13
+
+- Updated native Android SDK to 1.6.0
+- **Behaviour change:** initializing the SDK no longer starts recording on its own — a new recording begins when you call `startRecording()`. If your app relied on recording starting at `initialize()`, pass `'delayAutoStartRecording': TruemetricsConfig.autoStartOnInit` in the config (the README example and the sample app already do this, so they are unaffected). A positive value still starts after that many milliseconds, and any negative value means the SDK waits for `startRecording()`
+- A recording that was started is resumed automatically the next time the app initializes the SDK, so an app that is killed, restarted or updated mid-recording picks up where it left off. A device that was recording when it was updated keeps recording until it is stopped once with `stopRecording()`
+- Fixed the reported SDK state staying on "recording" after the SDK was deinitialized or its background service was lost. An app that decides whether to call `startRecording()` from the observed state would never start recording again for the rest of the process
+- `startRecording()` called before `initialize()` now reports a `NOT_INITIALIZED` error through the state stream instead of being silently ignored
+- Fixed `stopRecording()` being ignored when it arrived during a configured start delay, or in the moment before the SDK finished starting up — turning recording off and on again at app launch could leave it recording
+- Fixed crashes when metadata fields were `null`. Every standard metadata field is now optional, and an omitted or `null` field is uploaded as an empty string, which is what passing an empty string has always produced. A `null` passed as the metadata itself is now ignored with a log line instead of taking the app down
+- Fixed uploads stalling permanently when the backend repeatedly rejected the same packet, and a sensor reading with a corrupted timestamp no longer blocks local storage and uploads for the rest of the installation; devices already stuck on one recover automatically after upgrading
+- Improved data collection while the device runs on battery with the screen off: a recording session now keeps the processor awake, so sensors keep sampling at the configured rate throughout. Expect a modest increase in battery use in exchange for far fewer gaps in the data
+- The recorded data now also reports when the SDK held the CPU wake lock and when the device entered or left Doze
+
 ## 0.0.12
 
 - Updated native Android SDK to 1.5.8
